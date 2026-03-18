@@ -1,9 +1,40 @@
-# Stage 1: Build React frontend
+# ============================================
+# Stage 1: Frontend Dependencies
+# ============================================
+FROM node:20-slim AS dependencies
+
+WORKDIR /build
+
+# Copy package-related files first to leverage Docker's caching mechanism
+COPY frontend/package.json frontend/yarn.lock* frontend/package-lock.json* frontend/pnpm-lock.yaml* frontend/.npmrc* ./
+
+# Install project dependencies with frozen lockfile for reproducible builds
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=cache,target=/usr/local/share/.cache/yarn \
+    --mount=type=cache,target=/root/.local/share/pnpm/store \
+  if [ -f package-lock.json ]; then \
+    npm ci --no-audit --no-fund; \
+  elif [ -f yarn.lock ]; then \
+    corepack enable yarn && yarn install --frozen-lockfile --production=false; \
+  elif [ -f pnpm-lock.yaml ]; then \
+    corepack enable pnpm && pnpm install --frozen-lockfile; \
+  else \
+    echo "No lockfile found. Falling back to npm install." && npm install; \
+  fi
+
+# ============================================
+# Stage 2: Build React frontend
+# ============================================
 FROM node:20-slim AS frontend-builder
 WORKDIR /build
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm install
+
+# Copy project dependencies from dependencies stage
+COPY --from=dependencies /build/node_modules ./node_modules
+
+# Copy application source code
 COPY frontend/ ./
+
+# Build the React application
 RUN npm run build
 
 # Stage 2: Production image
