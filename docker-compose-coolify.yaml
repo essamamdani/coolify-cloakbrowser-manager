@@ -1,0 +1,24 @@
+services:
+  cloakbrowser:
+    build: .
+
+    environment:
+      - SERVICE_URL_CLOAKBROWSER_8080
+      - SERVICE_PASSWORD_CLOAKBROWSER
+      - AUTH_TOKEN=${SERVICE_PASSWORD_CLOAKBROWSER}
+      - PORT=8080
+
+    volumes:
+      - cloakprofiles:/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    restart: unless-stopped
+
+volumes:
+  cloakprofiles:
+    name: cloakprofiles
