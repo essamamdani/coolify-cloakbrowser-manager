@@ -41,6 +41,10 @@ RUN wget -q https://github.com/kasmtech/KasmVNC/releases/download/v1.3.3/kasmvnc
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV HOSTNAME="0.0.0.0"
+
 # Python deps
 COPY backend/requirements.txt /app/backend/
 RUN pip install --no-cache-dir -r /app/backend/requirements.txt
